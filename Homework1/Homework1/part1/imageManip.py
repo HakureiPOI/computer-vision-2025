@@ -146,7 +146,7 @@ def rotate_image(input_image, theta):
             x = j - center_x
 
             # Apply inverse rotation to find the corresponding source position
-            x_in, y_in = rotate2d([x, y], -theta)
+            x_in, y_in = rotate2d(np.array([x, y]), -theta)
 
             # Convert back to image coordinates
             input_i = int(round(y_in + center_y))
