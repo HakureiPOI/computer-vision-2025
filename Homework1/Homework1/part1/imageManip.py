@@ -114,7 +114,7 @@ def rotate2d(point, theta):
     x_rot = x * np.cos(theta) - y * np.sin(theta)
     y_rot = x * np.sin(theta) + y * np.cos(theta)
 
-    return np.round([x_rot, y_rot]).astype(np.int32)
+    return np.array([x_rot, y_rot])
 
 
 def rotate_image(input_image, theta):
@@ -146,8 +146,7 @@ def rotate_image(input_image, theta):
             x = j - center_x
 
             # Apply inverse rotation to find the corresponding source position
-            x_in = x * np.cos(-theta) - y * np.sin(-theta)
-            y_in = x * np.sin(-theta) + y * np.cos(-theta)
+            x_in, y_in = rotate2d([x, y], -theta)
 
             # Convert back to image coordinates
             input_i = int(round(y_in + center_y))
