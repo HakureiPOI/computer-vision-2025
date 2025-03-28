@@ -21,10 +21,15 @@ def dot_product(a, b):
     Returns:
         out: numpy array of shape (x, x) (scalar if x = 1)
     """
-    out = None
-    ### YOUR CODE HERE
-    pass
-    ### END YOUR CODE
+
+    # Input validation
+    if a.shape != b.shape:
+        raise ValueError("Input arrays must have the same shape.")
+    if a.ndim != 2 or b.ndim != 2:
+        raise ValueError("Input arrays must be 2-dimensional.")
+
+    # Calculate dot product
+    out = np.dot(a.T, b)
     return out
 
 
@@ -43,11 +48,19 @@ def complicated_matrix_function(M, a, b):
     Returns:
         out: numpy matrix of shape (x, 1).
     """
-    out = None
-    ### YOUR CODE HERE
-    pass
-    ### END YOUR CODE
 
+    # Input validation 
+    if a.shape != b.shape:
+        raise ValueError("Input arrays must have the same shape.")
+    if a.ndim != 2 or b.ndim != 2:
+        raise ValueError("Input arrays must be 2-dimensional.")
+    if a.shape[1] != 1 or b.shape[1] != 1:
+        raise ValueError("Input arrays must have shape (n, 1).")
+    if M.shape[1] != a.shape[0]:
+        raise ValueError("Input arrays must have compatible shapes.")
+
+    # Calculate (a^Tb) x (Ma)
+    out = np.dot(a.T, b) * np.dot(M, a)
     return out
 
 
@@ -63,11 +76,15 @@ def eigen_decomp(M):
         w: numpy array of shape (m,) such that the column v[:,i] is the eigenvector corresponding to the eigenvalue w[i].
         v: Matrix where every column is an eigenvector.
     """
-    w = None
-    v = None
-    ### YOUR CODE HERE
-    pass
-    ### END YOUR CODE
+
+    # Input validation 
+    if M.shape[0] != M.shape[1]:
+        raise ValueError("Input matrix must be square.")
+    if M.ndim != 2:
+        raise ValueError("Input matrix must be 2-dimensional.")
+
+    # Calculate eigenvalue decomposition
+    w, v = np.linalg.eig(M)
     return w, v
 
 
@@ -83,9 +100,16 @@ def euclidean_distance_native(u, v):
         float: Euclidean distance between `u` and `v`.
     """
     # First, run some checks:
-    assert isinstance(u, list)
-    assert isinstance(v, list)
-    assert len(u) == len(v)
+    # assert isinstance(u, list)
+    # assert isinstance(v, list)
+    # assert len(u) == len(v)
+
+    if not isinstance(u, list):
+        raise ValueError("Input u must be a list.")
+    if not isinstance(v, list):
+        raise ValueError("Input v must be a list.")
+    if len(u) != len(v):
+        raise ValueError("Input lists must have the same length.")
 
     # Compute the distance!
     # Notes:
@@ -95,9 +119,11 @@ def euclidean_distance_native(u, v):
     #     Finally, we want to sum the squares and square root the
     #     sum.
 
-    ### YOUR CODE HERE
-    pass
-    ### END YOUR CODE
+    # distance = np.sum(np.square(np.array(u) - np.array(v)))
+    # distance = np.sqrt(distance)
+
+    distance = np.linalg.norm(np.array(u) - np.array(v))
+    return distance
 
 
 def euclidean_distance_numpy(u, v):
@@ -112,9 +138,19 @@ def euclidean_distance_numpy(u, v):
         float: Euclidean distance between `u` and `v`.
     """
     # First, run some checks:
-    assert isinstance(u, np.ndarray)
-    assert isinstance(v, np.ndarray)
-    assert u.shape == v.shape
+    # assert isinstance(u, np.ndarray)
+    # assert isinstance(v, np.ndarray)
+    # assert u.shape == v.shape
+
+    if not isinstance(u, np.ndarray):
+        raise ValueError("Input u must be a NumPy array.")
+    if not isinstance(v, np.ndarray):
+        raise ValueError("Input v must be a NumPy array.")
+    if u.shape != v.shape:
+        raise ValueError("Input arrays must have the same shape.")
+        
+    # if u.ndim != 1 or v.ndim != 1:
+    #     raise ValueError("Input arrays must be 1-dimensional.")
 
     # Compute the distance!
     # Note:
@@ -127,9 +163,7 @@ def euclidean_distance_numpy(u, v):
     #     Finally, we want to sum the squares and square root the
     #     sum.
 
-    ### YOUR CODE HERE
-    pass
-    ### END YOUR CODE
+    return np.linalg.norm(u - v)
 
 
 def get_eigen_values_and_vectors(M, k):
@@ -149,9 +183,19 @@ def get_eigen_values_and_vectors(M, k):
         eigenvectors: list of length k containing the top k eigenvectors
             of shape (m,)
     """
-    eigenvalues = []
-    eigenvectors = []
-    ### YOUR CODE HERE
-    pass
-    ### END YOUR CODE
+
+    # Input validation 
+    if M.shape[0] != M.shape[1]:
+        raise ValueError("Input matrix must be square.")
+    if M.ndim != 2:
+        raise ValueError("Input matrix must be 2-dimensional.")
+
+    eigenvalues_all, eigenvectors_all = eigen_decomp(M)
+
+    indices = np.argsort(np.abs(eigenvalues_all))[::-1] 
+    top_indices = indices[:k]
+
+    eigenvalues = [eigenvalues_all[i] for i in top_indices]
+    eigenvectors = [eigenvectors_all[:, i] for i in top_indices]
+
     return eigenvalues, eigenvectors
