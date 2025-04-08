@@ -1,6 +1,5 @@
 import numpy as np
 
-
 def conv_nested(image, kernel):
     """A naive implementation of convolution filter.
 
@@ -20,6 +19,8 @@ def conv_nested(image, kernel):
     out = np.zeros((Hi, Wi))
     
     kh, kw = Hk // 2, Wk // 2
+    kernel_flipped = np.flip(kernel)  # 卷积需要翻转模板
+
     for m in range(Hi):
         for n in range(Wi):
             val = 0
@@ -28,7 +29,7 @@ def conv_nested(image, kernel):
                     ii = m - kh + i
                     jj = n - kw + j
                     if 0 <= ii < Hi and 0 <= jj < Wi:
-                        val += image[ii, jj] * kernel[i, j]
+                        val += image[ii, jj] * kernel_flipped[i, j]
             out[m, n] = val
 
     return out
@@ -50,13 +51,10 @@ def zero_pad(image, pad_height, pad_width):
     Returns:
         out: numpy array of shape (H+2*pad_height, W+2*pad_width).
     """
-
     H, W = image.shape
     out = np.zeros((H + 2 * pad_height, W + 2 * pad_width))
     out[pad_height:pad_height + H, pad_width:pad_width + W] = image
     return out
-
-
 
 def conv_fast(image, kernel):
     """ An efficient implementation of convolution filter.
@@ -79,11 +77,10 @@ def conv_fast(image, kernel):
     """
     Hi, Wi = image.shape
     Hk, Wk = kernel.shape
-    out = np.zeros((Hi, Wi))
     kh, kw = Hk // 2, Wk // 2
-
-    kernel_flipped = np.flip(np.flip(kernel, axis=0), axis=1)
+    kernel_flipped = np.flip(kernel)  # 卷积需要翻转模板
     image_padded = zero_pad(image, kh, kw)
+    out = np.zeros((Hi, Wi))
 
     for m in range(Hi):
         for n in range(Wi):
@@ -104,11 +101,9 @@ def cross_correlation(f, g):
     Returns:
         out: numpy array of shape (Hf, Wf).
     """
-
-    g_flipped = np.flip(np.flip(g, axis=0), axis=1)
-    out = conv_fast(f, np.flip(np.flip(g_flipped, axis=0), axis=1))  # i.e. not flipping g
+    # 交叉相关不翻转模板
+    out = conv_fast(f, g)
     return out
-
 
 def zero_mean_cross_correlation(f, g):
     """ Zero-mean cross-correlation of image f and template g.
@@ -124,12 +119,10 @@ def zero_mean_cross_correlation(f, g):
     Returns:
         out: numpy array of shape (Hf, Wf).
     """
-
     g_mean = np.mean(g)
     g_zero_mean = g - g_mean
     out = cross_correlation(f, g_zero_mean)
     return out
-
 
 def normalized_cross_correlation(f, g):
     """ Normalized cross-correlation of image f and template g.
@@ -147,11 +140,11 @@ def normalized_cross_correlation(f, g):
     Returns:
         out: numpy array of shape (Hf, Wf).
     """
-
     Hf, Wf = f.shape
     Hg, Wg = g.shape
-    out = np.zeros((Hf, Wf))
     gh, gw = Hg // 2, Wg // 2
+    out = np.zeros((Hf, Wf))
+
     g_mean = np.mean(g)
     g_std = np.std(g)
     g_norm = (g - g_mean) / (g_std + 1e-8)
@@ -167,6 +160,6 @@ def normalized_cross_correlation(f, g):
                 window_norm = (window - w_mean) / w_std
                 out[i, j] = np.sum(window_norm * g_norm)
             else:
-                out[i, j] = 0
+                out[i, j] = 0  # 标准差过小，视为无信息
 
     return out
