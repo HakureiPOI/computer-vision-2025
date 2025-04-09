@@ -84,6 +84,7 @@ def conv_fast(image, kernel):
 
     for m in range(Hi):
         for n in range(Wi):
+            # 用 np.sum() 代替后面两重循环
             window = image_padded[m:m + Hk, n:n + Wk]
             out[m, n] = np.sum(window * kernel_flipped)
 
