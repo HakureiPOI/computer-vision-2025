@@ -70,9 +70,14 @@ def partial_x(img):
         out: x-derivative image.
     """
 
-    sobel_x = np.array([[-1, 0, 1],
-                        [-2, 0, 2],
-                        [-1, 0, 1]])
+    # sobel_x = np.array([[-1, 0, 1],
+    #                     [-2, 0, 2],
+    #                     [-1, 0, 1]])
+
+    # 没看题，懒得换变量名了
+    sobel_x = np.array([[0.5, 0, -0.5]])
+    
+    sobel_x = np.flip(sobel_x)
     
     out = conv(img, sobel_x)
 
@@ -90,9 +95,13 @@ def partial_y(img):
         out: y-derivative image.
     """
 
-    sobel_y = np.array([[-1, -2, -1],
-                        [ 0,  0,  0],
-                        [ 1,  2,  1]])
+    # sobel_y = np.array([[-1, -2, -1],
+    #                     [ 0,  0,  0],
+    #                     [ 1,  2,  1]])
+    
+    sobel_y = np.array([[0.5], [0], [-0.5]])
+
+    sobel_y = np.flip(sobel_y)
     
     out = conv(img, sobel_y)
 
@@ -255,7 +264,7 @@ def canny(img, kernel_size=5, sigma=1.4, high=20, low=15):
     Returns:
         edge: numpy array of shape(H, W).
     """
-    
+
     # Step 1: Gaussian smoothing
     kernel = gaussian_kernel(kernel_size, sigma)
     smoothed = conv(img, kernel)
