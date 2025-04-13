@@ -55,7 +55,7 @@ def gaussian_kernel(size, sigma):
     xx, yy = np.meshgrid(ax, ax)
     kernel = np.exp(-(xx**2 + yy**2) / (2 * sigma**2))
     kernel /= (2 * np.pi * sigma**2)
-    kernel /= np.sum(kernel)  # 归一化
+    # kernel /= np.sum(kernel)  # 归一化
     return kernel
 
 def partial_x(img):
