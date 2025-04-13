@@ -214,7 +214,7 @@ def link_edges(strong_edges, weak_edges):
     while queue:
         y, x = queue.popleft()
         for ny, nx in get_neighbors(y, x, H, W):
-            if (weak_edges[ny, nx] or strong_edges[ny, nx]) and not visited[ny, nx]:
+            if weak_edges[ny, nx] and not visited[ny, nx]:
                 edges[ny, nx] = True
                 visited[ny, nx] = True
                 queue.append((ny, nx))
