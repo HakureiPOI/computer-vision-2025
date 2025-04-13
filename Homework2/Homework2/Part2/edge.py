@@ -247,18 +247,12 @@ def link_edges(strong_edges, weak_edges):
 
     queue = deque(np.argwhere(strong_edges))
 
-    # 怎么看题目的意思是，strong edges 保留
-    # 与strong_edges 直接连接的保留
-    # 通过 weak_edges 与 strong_edges 连接的保留
     while queue:
         y, x = queue.popleft()
         for i, j in get_neighbors(y, x, H, W):
-            # 只要和 queue 中的点相连就保留
-            visited[i, j] = True
-            edges[i, j] = True
-
-            # Queue 中保留 strong_edges 和与 strong_edges 连接的 weak_edges
             if weak_edges[i, j] and not visited[i, j]:
+                visited[i, j] = True
+                edges[i, j] = True
                 queue.append((i, j))
 
     return edges
