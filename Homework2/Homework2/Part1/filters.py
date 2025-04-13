@@ -14,12 +14,13 @@ def conv_nested(image, kernel):
     Returns:
         out: numpy array of shape (Hi, Wi).
     """
+
     Hi, Wi = image.shape
     Hk, Wk = kernel.shape
     out = np.zeros((Hi, Wi))
     
     kh, kw = Hk // 2, Wk // 2
-    kernel_flipped = np.flip(kernel)  # 卷积需要翻转模板
+    kernel_flipped = np.flip(kernel)  
 
     for m in range(Hi):
         for n in range(Wi):
@@ -51,6 +52,7 @@ def zero_pad(image, pad_height, pad_width):
     Returns:
         out: numpy array of shape (H+2*pad_height, W+2*pad_width).
     """
+
     H, W = image.shape
     out = np.zeros((H + 2 * pad_height, W + 2 * pad_width))
     out[pad_height:pad_height + H, pad_width:pad_width + W] = image
@@ -75,16 +77,16 @@ def conv_fast(image, kernel):
     Returns:
         out: numpy array of shape (Hi, Wi).
     """
+
     Hi, Wi = image.shape
     Hk, Wk = kernel.shape
     kh, kw = Hk // 2, Wk // 2
-    kernel_flipped = np.flip(kernel)  # 卷积需要翻转模板
+    kernel_flipped = np.flip(kernel)  
     image_padded = zero_pad(image, kh, kw)
     out = np.zeros((Hi, Wi))
 
     for m in range(Hi):
         for n in range(Wi):
-            # 用 np.sum() 代替后面两重循环
             window = image_padded[m:m + Hk, n:n + Wk]
             out[m, n] = np.sum(window * kernel_flipped)
 
@@ -102,6 +104,7 @@ def cross_correlation(f, g):
     Returns:
         out: numpy array of shape (Hf, Wf).
     """
+
     # 交叉相关不翻转模板
     out = conv_fast(f, g)
     return out
@@ -120,6 +123,7 @@ def zero_mean_cross_correlation(f, g):
     Returns:
         out: numpy array of shape (Hf, Wf).
     """
+
     g_mean = np.mean(g)
     g_zero_mean = g - g_mean
     out = cross_correlation(f, g_zero_mean)
@@ -141,6 +145,7 @@ def normalized_cross_correlation(f, g):
     Returns:
         out: numpy array of shape (Hf, Wf).
     """
+    
     Hf, Wf = f.shape
     Hg, Wg = g.shape
     gh, gw = Hg // 2, Wg // 2
