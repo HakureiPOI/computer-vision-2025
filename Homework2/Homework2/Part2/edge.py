@@ -204,6 +204,7 @@ def link_edges(strong_edges, weak_edges):
     Returns:
         edges: numpy boolean array of shape(H, W).
     """
+    from collections import deque
 
     H, W = strong_edges.shape
     edges = np.copy(strong_edges)
