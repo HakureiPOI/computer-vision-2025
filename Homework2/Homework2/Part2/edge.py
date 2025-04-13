@@ -165,7 +165,7 @@ def double_thresholding(img, high, low):
     """
 
     strong = img > high
-    weak = (img >= low) & (img <= high)
+    weak = (img > low) & (img <= high)
     return strong, weak
 
 
@@ -211,22 +211,26 @@ def link_edges(strong_edges, weak_edges):
     Returns:
         edges: numpy boolean array of shape(H, W).
     """
-
     from collections import deque
-    H, W = strong_edges.shape
-    visited = np.copy(strong_edges)
-    edges = np.copy(strong_edges)
-    queue = deque(np.argwhere(strong_edges))
 
+    H, W = strong_edges.shape
+    edges = np.copy(strong_edges)
+    weak_edges = np.copy(weak_edges)
+
+    # 初始化队列，加入所有强边缘像素的位置
+    queue = deque()
+    for y, x in zip(*np.nonzero(strong_edges)):
+        queue.append((y, x))
+
+    # BFS 扩展，将与强边缘相连的弱边缘也标记为边缘
     while queue:
         y, x = queue.popleft()
-        for i, j in get_neighbors(y, x, H, W):
-            if weak_edges[i, j] and not visited[i, j]:
-                visited[i, j] = True
-                edges[i, j] = True
-                queue.append((i, j))
-    return edges
+        for ny, nx in get_neighbors(y, x, H, W):
+            if weak_edges[ny, nx] and not edges[ny, nx]:
+                edges[ny, nx] = True
+                queue.append((ny, nx))
 
+    return edges
 def canny(img, kernel_size=5, sigma=1.4, high=20, low=15):
     """ Implement canny edge detector by calling functions above.
 
