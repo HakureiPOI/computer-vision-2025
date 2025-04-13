@@ -239,23 +239,16 @@ def link_edges(strong_edges, weak_edges):
     Returns:
         edges: numpy boolean array of shape(H, W).
     """
-
-    from collections import deque
     H, W = strong_edges.shape
-    visited = np.copy(strong_edges)
     edges = np.copy(strong_edges)
-
-    queue = deque(np.argwhere(strong_edges))
-
-    while queue:
-        y, x = queue.popleft()
-        for i, j in get_neighbors(y, x, H, W):
-            if weak_edges[i, j] and not visited[i, j]:
-                visited[i, j] = True
+    
+    for i in range(1, H-1):
+        for j in range(1, W-1):
+            neighbors = get_neighbors(j, i, H, W)
+            if weak_edges[i, j] and np.any(edges[x, y] for x, y in neighbors):
                 edges[i, j] = True
-                queue.append((i, j))
 
-    return edges
+    return edges 
 
 def canny(img, kernel_size=5, sigma=1.4, high=20, low=15):
     """ Implement canny edge detector by calling functions above.
