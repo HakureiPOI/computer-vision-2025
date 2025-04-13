@@ -145,28 +145,36 @@ def non_maximum_suppression(G, theta):
     """
     H, W = G.shape
     out = np.zeros((H, W))
-    theta = np.floor((theta + 22.5) / 45) * 45 % 360  # 方向量化
 
-    for i in range(1, H - 1):
-        for j in range(1, W - 1):
-            t = theta[i, j]
-            curr = G[i, j]
+    angle = np.rad2deg(theta) % 180 # 转换成 [0, 180) 的角度范围
 
-            if t == 0 or t == 180:
-                neighbors = [G[i, j - 1], G[i, j + 1]]
-            elif t == 45 or t == 225:
-                neighbors = [G[i - 1, j + 1], G[i + 1, j - 1]]
-            elif t == 90 or t == 270:
-                neighbors = [G[i - 1, j], G[i + 1, j]]
-            elif t == 135 or t == 315:
-                neighbors = [G[i - 1, j - 1], G[i + 1, j + 1]]
+    for y in range(1, H - 1):
+        for x in range(1, W - 1):
+            direction = angle[y, x]
+
+            # 初始化邻居值
+            neighbor1 = neighbor2 = 0
+
+            # 四舍五入方向角度
+            if (0 <= direction < 22.5) or (157.5 <= direction < 180):
+                neighbor1 = G[y, x - 1]
+                neighbor2 = G[y, x + 1]
+            elif 22.5 <= direction < 67.5:
+                neighbor1 = G[y - 1, x + 1]
+                neighbor2 = G[y + 1, x - 1]
+            elif 67.5 <= direction < 112.5:
+                neighbor1 = G[y - 1, x]
+                neighbor2 = G[y + 1, x]
+            elif 112.5 <= direction < 157.5:
+                neighbor1 = G[y - 1, x - 1]
+                neighbor2 = G[y + 1, x + 1]
+
+            # 非极大值抑制
+            if G[y, x] >= neighbor1 and G[y, x] >= neighbor2:
+                out[y, x] = G[y, x]
             else:
-                neighbors = [0, 0]  # fallback
+                out[y, x] = 0
 
-            if curr >= max(neighbors):
-                out[i, j] = curr
-            else:
-                out[i, j] = 0
     return out
 
 
