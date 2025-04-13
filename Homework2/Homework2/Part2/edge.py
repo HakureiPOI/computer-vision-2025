@@ -18,15 +18,15 @@ def gaussian_kernel(size, sigma):
     xx, yy = np.meshgrid(ax, ax)
     kernel = np.exp(-(xx**2 + yy**2) / (2 * sigma**2))
     kernel /= (2 * np.pi * sigma**2)
-    kernel /= np.sum(kernel)
+    # kernel /= np.sum(kernel) 给的对比例没有归一化
     return kernel
 
 def partial_x(img):
-    kernel = np.array([[0.5, 0, -0.5]])
+    kernel = np.array([[-0.5, 0, 0.5]])
     return conv(img, kernel)
 
 def partial_y(img):
-    kernel = np.array([[0.5], [0], [-0.5]])
+    kernel = np.array([[-0.5], [0], [0.5]])
     return conv(img, kernel)
 
 def gradient(img):
