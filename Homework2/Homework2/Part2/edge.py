@@ -76,9 +76,7 @@ def partial_x(img):
 
     # 没看题，懒得换变量名了
     sobel_x = np.array([[0.5, 0, -0.5]])
-    
     sobel_x = np.flip(sobel_x)
-    
     out = conv(img, sobel_x)
 
     return out
@@ -100,9 +98,7 @@ def partial_y(img):
     #                     [ 1,  2,  1]])
     
     sobel_y = np.array([[0.5], [0], [-0.5]])
-
     sobel_y = np.flip(sobel_y)
-    
     out = conv(img, sobel_y)
 
     return out
@@ -194,6 +190,7 @@ def double_thresholding(img, high, low):
             higher threshold and greater than the lower threshold.
     """
 
+    # 双阈值限制
     strong_edges = img > high
     weak_edges = (img >= low) & (img <= high)
     return strong_edges, weak_edges
@@ -250,12 +247,18 @@ def link_edges(strong_edges, weak_edges):
 
     queue = deque(np.argwhere(strong_edges))
 
+    # 怎么看题目的意思是，strong edges 保留
+    # 与strong_edges 直接连接的保留
+    # 通过 weak_edges 与 strong_edges 连接的保留
     while queue:
         y, x = queue.popleft()
         for i, j in get_neighbors(y, x, H, W):
+            # 只要和 queue 中的点相连就保留
+            visited[i, j] = True
+            edges[i, j] = True
+
+            # Queue 中保留 strong_edges 和与 strong_edges 连接的 weak_edges
             if weak_edges[i, j] and not visited[i, j]:
-                visited[i, j] = True
-                edges[i, j] = True
                 queue.append((i, j))
 
     return edges
@@ -273,20 +276,15 @@ def canny(img, kernel_size=5, sigma=1.4, high=20, low=15):
         edge: numpy array of shape(H, W).
     """
 
-    # Step 1: Gaussian smoothing
     kernel = gaussian_kernel(kernel_size, sigma)
     smoothed = conv(img, kernel)
 
-    # Step 2: Gradient magnitude and direction
     G, theta = gradient(smoothed)
 
-    # Step 3: Non-maximum suppression
     nms = non_maximum_suppression(G, theta)
 
-    # Step 4: Double thresholding
     strong, weak = double_thresholding(nms, high, low)
 
-    # Step 5: Edge tracking by hysteresis
     edge = link_edges(strong, weak)
 
     return edge
