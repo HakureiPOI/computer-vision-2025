@@ -1,5 +1,6 @@
 import numpy as np
 from scipy.signal import convolve2d
+from numpy.lib.stride_tricks import sliding_window_view
 
 def conv_nested(image, kernel):
     """A naive implementation of convolution filter.
@@ -78,18 +79,19 @@ def conv_fast(image, kernel):
     Returns:
         out: numpy array of shape (Hi, Wi).
     """
-
     Hi, Wi = image.shape
     Hk, Wk = kernel.shape
     kh, kw = Hk // 2, Wk // 2
-    kernel_flipped = np.flip(kernel)  
-    image_padded = zero_pad(image, kh, kw)
-    out = np.zeros((Hi, Wi))
 
-    for m in range(Hi):
-        for n in range(Wi):
-            window = image_padded[m:m + Hk, n:n + Wk]
-            out[m, n] = np.sum(window * kernel_flipped)
+    image_padded = zero_pad(image, kh, kw)
+
+    # 使用滑动窗口生成所有图像块 (Hi, Wi, Hk, Wk)
+    windows = sliding_window_view(image_padded, (Hk, Wk))
+
+    kernel_flipped = np.flip(kernel)
+
+    # einsum 快速批量点乘+求和
+    out = np.einsum('ijkl,kl->ij', windows, kernel_flipped)
 
     return out
 
