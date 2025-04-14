@@ -1,4 +1,5 @@
 import numpy as np
+from scipy.signal import convolve2d
 
 def conv_nested(image, kernel):
     """A naive implementation of convolution filter.
@@ -95,10 +96,8 @@ def conv_fast(image, kernel):
 def conv_scipy(image, kernel):
     
     #直接使用 scipy 的 convolve2d 函数来实现卷积
-    from scipy.signal import convolve2d
-
+    # from scipy.signal import convolve2d
     out = convolve2d(image, kernel, mode='same', boundary='fill', fillvalue=0)
-
     return out 
 
 def cross_correlation(f, g):
