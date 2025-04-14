@@ -78,19 +78,27 @@ def conv_fast(image, kernel):
         out: numpy array of shape (Hi, Wi).
     """
 
-    Hi, Wi = image.shape
-    Hk, Wk = kernel.shape
-    kh, kw = Hk // 2, Wk // 2
-    kernel_flipped = np.flip(kernel)  
-    image_padded = zero_pad(image, kh, kw)
-    out = np.zeros((Hi, Wi))
+    # Hi, Wi = image.shape
+    # Hk, Wk = kernel.shape
+    # kh, kw = Hk // 2, Wk // 2
+    # kernel_flipped = np.flip(kernel)  
+    # image_padded = zero_pad(image, kh, kw)
+    # out = np.zeros((Hi, Wi))
 
-    for m in range(Hi):
-        for n in range(Wi):
-            window = image_padded[m:m + Hk, n:n + Wk]
-            out[m, n] = np.sum(window * kernel_flipped)
+    # for m in range(Hi):
+    #     for n in range(Wi):
+    #         window = image_padded[m:m + Hk, n:n + Wk]
+    #         out[m, n] = np.sum(window * kernel_flipped)
 
-    return out
+    # return out
+
+    # 额外调用了一次 zero_pad，np.sum() 也有额外成本，在小矩阵的时候总的开销实际更大 
+    
+    # 直接使用 scipy 的 convolve2d 函数来实现卷积
+    from scipy.signal import convolve2d
+    out = convolve2d(image, kernel, mode='same', boundary='symm')
+
+    return out 
 
 def cross_correlation(f, g):
     """ Cross-correlation of image f and template g.
