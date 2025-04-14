@@ -96,7 +96,8 @@ def conv_fast(image, kernel):
     
     # 直接使用 scipy 的 convolve2d 函数来实现卷积
     from scipy.signal import convolve2d
-    out = convolve2d(image, kernel, mode='same', boundary='symm')
+
+    out = convolve2d(image, np.flip(kernel), mode='same', boundary='fill', fillvalue=0)
 
     return out 
 
