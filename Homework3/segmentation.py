@@ -56,7 +56,7 @@ def kmeans(features, k, num_iters=500):
     return assignments
 
 ### Clustering Methods for colorful image
-def kmeans_color(features, k, num_iters=500):
+def kmeans_color(img, k, num_iters=500):
     H, W, C = img.shape
     features = img.reshape(-1, C).astype(np.float32)
     assignments = kmeans(features, k, num_iters)
