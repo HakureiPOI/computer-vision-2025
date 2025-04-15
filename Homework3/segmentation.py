@@ -37,72 +37,95 @@ def kmeans(features, k, num_iters=500):
     assignments = np.zeros(N, dtype=np.uint32)
 
     for n in range(num_iters):
-        ### YOUR CODE HERE
-        pass
-        ### END YOUR CODE
+        # scipy.spatial.distance.cdist 可以计算两个集合中所有向量之间的成对距离
+        dists = cdist(features, centers)  # shape : (N, k)
+        new_assignments = np.argmin(dists, axis=1)
+
+        # 收敛了就提前终止
+        if np.all(assignments == new_assignments):
+            print(f'Converged after {n} iterations')
+            break
+        assignments = new_assignments
+
+        # 重新计算每个簇的中心
+        for i in range(k):
+            points_in_cluster = features[assignments == i]
+            if len(points_in_cluster) > 0:
+                centers[i] = np.mean(points_in_cluster, axis=0)
 
     return assignments
 
 ### Clustering Methods for colorful image
 def kmeans_color(features, k, num_iters=500):
-    N=None # 像素个数
-    assignments = np.zeros(N, dtype=np.uint32)
-    #Like the kmeans function above
-    ### YOUR CODE HERE
-    pass
-    ### END YOUR CODE
-
-    return assignments
+    H, W, C = img.shape
+    features = img.reshape(-1, C).astype(np.float32)
+    assignments = kmeans(features, k, num_iters)
+    return assignments.reshape(H, W)
 
 
-
-
-
-#找每个点最后会收敛到的地方（peak）
+# 找每个点最后会收敛到的地方（peak）
 def findpeak(data, idx, r):
-    t = 0.01
-    shift = np.array([1])
-    data_point = data[:, idx]
-    dataT = data.T
-    data_pointT = data_point.T
-    data_pointT = data_pointT.reshape(1, 3)
+    t = 0.01  # 收敛阈值
+    shift = np.array([1])  # 初始位移值
+    data_point = data[:, idx]  # 当前点
+    dataT = data.T  # 所有点 shape: (N, D)
+    data_pointT = data_point.T.reshape(1, -1)  # 当前点 shape: (1, D)
 
-    # Runs until the shift is smaller than the set threshold
-    while shift.all() > t:
-        # 计算当前点和所有点之间的距离
-        # 并筛选出在半径r内的点，计算mean vector（这里是最简单的均值，也可尝试高斯加权）
-        # 用新的center（peak）更新当前点，直到满足要求跳出循环
-        ### YOUR CODE HERE
-        pass
-        ### END YOUR CODE
+    while np.linalg.norm(shift) > t:
+        # 计算当前点与所有点之间的欧几里得距离
+        dists = np.linalg.norm(dataT - data_pointT, axis=1)
 
-    return data_pointT.T
+        # 找出在半径 r 内的点
+        in_radius = dataT[dists < r]
+
+        if len(in_radius) == 0:
+            break
+
+        # 计算这些点的均值（Mean Shift vector）
+        new_point = np.mean(in_radius, axis=0, keepdims=True)
+
+        # 更新 shift 并移动当前点
+        shift = new_point - data_pointT
+        data_pointT = new_point
+
+    return data_pointT.T 
+
 
 
 # Mean shift algorithm
 # 可以改写代码，鼓励自己的想法，但请保证输入输出与notebook一致
 def meanshift(data, r):
-    labels = np.zeros(len(data.T))
-    peaks = [] #聚集的类中心
-    label_no = 1 #当前label
+def meanshift(data, r):
+    labels = np.zeros(len(data.T), dtype=np.int32)
+    peaks = []  # 已识别的聚类中心（peaks）
+    label_no = 1  # 当前聚类编号
+
+    # 处理第一个点
+    peak = findpeak(data, 0, r)
+    peakT = peak.T  # shape: (1, D)
+    peaks.append(peakT)
     labels[0] = label_no
 
-    # findpeak is called for the first index out of the loop
-    peak = findpeak(data, 0, r)
-    peakT = np.concatenate(peak, axis=0).T
-    peaks.append(peakT)
+    # 遍历每个点，寻找其聚类中心
+    for idx in range(1, len(data.T)):
+        peak = findpeak(data, idx, r)
+        peakT = peak.T  # shape: (1, D)
 
-    # Every data point is iterated through
-    for idx in range(0, len(data.T)):
-        # 遍历数据，寻找当前点的peak
-        # 并实时关注当前peak是否会收敛到一个新的聚类（和已有peaks比较）
-        # 若是，更新label_no，peaks，labels，继续
-        # 若不是，当前点就属于已有类，继续
-        ### YOUR CODE HERE
-        pass
-        ### END YOUR CODE
-    #print(set(labels))
-    return labels, np.array(peaks).T
+        assigned = False
+        # 遍历已有聚类中心，看是否可以归入某类
+        for i, existing_peak in enumerate(peaks):
+            if np.linalg.norm(peakT - existing_peak) < r / 2:
+                labels[idx] = i + 1
+                assigned = True
+                break
+
+        # 如果未归入任何已有聚类，则新建聚类
+        if not assigned:
+            peaks.append(peakT)
+            label_no += 1
+            labels[idx] = label_no
+
+    return labels, np.array(peaks).T  # peaks shape: D × num_peaks
 
 
 # image segmentation
@@ -153,10 +176,11 @@ def compute_accuracy(mask_gt, mask):
             bigger number is better, where 1.0 indicates a perfect segmentation.
     """
 
-    accuracy = None
-    ### YOUR CODE HERE
-    pass
-    ### END YOUR CODE
+    assert mask_gt.shape == mask.shape, "Masks must have the same shape"
+    
+    correct = (mask_gt == mask).sum()
+    total = mask_gt.size
+    acc = correct / total
 
-    return accuracy
+    return acc
 
