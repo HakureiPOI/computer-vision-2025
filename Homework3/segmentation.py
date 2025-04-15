@@ -26,7 +26,7 @@ def kmeans(features, k, num_iters=500):
         assignments - Array representing cluster assignment of each point.
             (e.g. i-th point is assigned to cluster assignments[i])
     """
-    print(features.shape)
+    # print(features.shape)
     N, D = features.shape
 
     assert N >= k, 'Number of clusters cannot be greater than number of points'
@@ -43,7 +43,7 @@ def kmeans(features, k, num_iters=500):
 
         # 收敛了就提前终止
         if np.all(assignments == new_assignments):
-            print(f'Converged after {n} iterations')
+            # print(f'Converged after {n} iterations')
             break
         assignments = new_assignments
 
@@ -95,47 +95,33 @@ def findpeak(data, idx, r):
 # Mean shift algorithm
 # 可以改写代码，鼓励自己的想法，但请保证输入输出与notebook一致
 def meanshift(data, r):
-    # labels = np.zeros(len(data.T), dtype=np.int32)
-    # peaks = []  # 已识别的聚类中心（peaks）
-    # label_no = 1  # 当前聚类编号
+    N = data.shape[1]
+    D = data.shape[0]
+    labels = np.zeros(N, dtype=np.int32)
+    peaks = []  # 所有聚类中心
+    label_no = 1
 
-    # # 处理第一个点
-    # peak = findpeak(data, 0, r)
-    # peakT = peak.T  # shape: (1, D)
-    # peaks.append(peakT)
-    # labels[0] = label_no
+    for idx in range(N):
+        peak = findpeak(data, idx, r).T  # shape = (1, D)
 
-    # # 遍历每个点，寻找其聚类中心
-    # for idx in range(1, len(data.T)):
-    #     peak = findpeak(data, idx, r)
-    #     peakT = peak.T  # shape: (1, D)
+        # 判断是否接近已有的聚类中心
+        assigned = False
+        for i, existing_peak in enumerate(peaks):
+            if np.linalg.norm(peak - existing_peak) < r / 2:
+                labels[idx] = i + 1
+                assigned = True
+                break
 
-    #     assigned = False
-    #     # 遍历已有聚类中心，看是否可以归入某类
-    #     for i, existing_peak in enumerate(peaks):
-    #         if np.linalg.norm(peakT - existing_peak) < r / 2:
-    #             labels[idx] = i + 1
-    #             assigned = True
-    #             break
+        if not assigned:
+            peaks.append(peak)
+            labels[idx] = label_no
+            label_no += 1
 
-    #     # 如果未归入任何已有聚类，则新建聚类
-    #     if not assigned:
-    #         peaks.append(peakT)
-    #         label_no += 1
-    #         labels[idx] = label_no
+    peaks = np.array(peaks).squeeze()  # shape = (num_clusters, D)
+    if peaks.ndim == 1:
+        peaks = peaks[np.newaxis, :]
+    return labels, peaks.T  # 转置为 (D, num_clusters)
 
-    from sklearn.cluster import MeanShift
-
-    # sklearn 的 MeanShift 期望输入为 (N, D)，所以需要转置
-    data_T = data.T
-
-    ms = MeanShift(bandwidth=r, bin_seeding=True)
-    ms.fit(data_T)
-
-    labels = ms.labels_
-    peaks = ms.cluster_centers_.T  # 转回 (D, num_clusters)
-
-    return labels, peaks
 
 # image segmentation
 def segmIm(img, r):
