@@ -95,34 +95,53 @@ def findpeak(data, idx, r):
 # Mean shift algorithm
 # 可以改写代码，鼓励自己的想法，但请保证输入输出与notebook一致
 def meanshift(data, r):
-    labels = np.zeros(len(data.T), dtype=np.int32)
-    peaks = []  # 已识别的聚类中心（peaks）
-    label_no = 1  # 当前聚类编号
+    # labels = np.zeros(len(data.T), dtype=np.int32)
+    # peaks = []  # 已识别的聚类中心（peaks）
+    # label_no = 1  # 当前聚类编号
 
-    # 处理第一个点
-    peak = findpeak(data, 0, r)
-    peakT = peak.T  # shape: (1, D)
-    peaks.append(peakT)
-    labels[0] = label_no
+    # # 处理第一个点
+    # peak = findpeak(data, 0, r)
+    # peakT = peak.T  # shape: (1, D)
+    # peaks.append(peakT)
+    # labels[0] = label_no
 
-    # 遍历每个点，寻找其聚类中心
-    for idx in range(1, len(data.T)):
-        peak = findpeak(data, idx, r)
-        peakT = peak.T  # shape: (1, D)
+    # # 遍历每个点，寻找其聚类中心
+    # for idx in range(1, len(data.T)):
+    #     peak = findpeak(data, idx, r)
+    #     peakT = peak.T  # shape: (1, D)
 
-        assigned = False
-        # 遍历已有聚类中心，看是否可以归入某类
-        for i, existing_peak in enumerate(peaks):
-            if np.linalg.norm(peakT - existing_peak) < r / 2:
-                labels[idx] = i + 1
-                assigned = True
-                break
+    #     assigned = False
+    #     # 遍历已有聚类中心，看是否可以归入某类
+    #     for i, existing_peak in enumerate(peaks):
+    #         if np.linalg.norm(peakT - existing_peak) < r / 2:
+    #             labels[idx] = i + 1
+    #             assigned = True
+    #             break
 
-        # 如果未归入任何已有聚类，则新建聚类
-        if not assigned:
-            peaks.append(peakT)
-            label_no += 1
-            labels[idx] = label_no
+    #     # 如果未归入任何已有聚类，则新建聚类
+    #     if not assigned:
+    #         peaks.append(peakT)
+    #         label_no += 1
+    #         labels[idx] = label_no
+
+    from sklearn.cluster import MeanShift
+
+    # 计算距离矩阵
+    dists = squareform(pdist(data.T))
+    # 计算均值漂移
+    ms = MeanShift(bandwidth=r, bin_seeding=True)
+    ms.fit(dists)
+    labels = ms.labels_  # shape: (num_points,)
+    # 获取聚类中心
+    cluster_centers = ms.cluster_centers_  # shape: (num_clusters, D)
+    # 获取每个点的聚类中心
+    peaks = []
+    for i in range(len(cluster_centers)):
+        # 找到每个点的聚类中心
+        peak = findpeak(data, i, r)
+        peaks.append(peak)
+    # 将聚类中心转换为 numpy 数组
+    peaks = np.array(peaks).reshape(-1, data.shape[0])
 
     return labels, np.array(peaks).T  # peaks shape: D × num_peaks
 
