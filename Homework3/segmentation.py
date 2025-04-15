@@ -26,32 +26,23 @@ def kmeans(features, k, num_iters=500):
         assignments - Array representing cluster assignment of each point.
             (e.g. i-th point is assigned to cluster assignments[i])
     """
-    # print(features.shape)
+
     N, D = features.shape
-
     assert N >= k, 'Number of clusters cannot be greater than number of points'
-
-    # Randomly initalize cluster centers
+    
     idxs = np.random.choice(N, size=k, replace=False)
     centers = features[idxs]
     assignments = np.zeros(N, dtype=np.uint32)
 
-    for n in range(num_iters):
-        # scipy.spatial.distance.cdist 可以计算两个集合中所有向量之间的成对距离
-        dists = cdist(features, centers)  # shape : (N, k)
+    for _ in range(num_iters):
+        dists = cdist(features, centers)
         new_assignments = np.argmin(dists, axis=1)
-
-        # 收敛了就提前终止
         if np.all(assignments == new_assignments):
-            # print(f'Converged after {n} iterations')
             break
         assignments = new_assignments
-
-        # 重新计算每个簇的中心
         for i in range(k):
-            points_in_cluster = features[assignments == i]
-            if len(points_in_cluster) > 0:
-                centers[i] = np.mean(points_in_cluster, axis=0)
+            if np.any(assignments == i):
+                centers[i] = features[assignments == i].mean(axis=0)
 
     return assignments
 
@@ -65,67 +56,43 @@ def kmeans_color(img, k, num_iters=500):
 
 # 找每个点最后会收敛到的地方（peak）
 def findpeak(data, idx, r):
-    t = 0.01  # 收敛阈值
-    shift = np.array([1])  # 初始位移值
-    data_point = data[:, idx]  # 当前点
-    dataT = data.T  # 所有点 shape: (N, D)
-    data_pointT = data_point.T.reshape(1, -1)  # 当前点 shape: (1, D)
-
-    while np.linalg.norm(shift) > t:
-        # 计算当前点与所有点之间的欧几里得距离
-        dists = np.linalg.norm(dataT - data_pointT, axis=1)
-
-        # 找出在半径 r 内的点
-        in_radius = dataT[dists < r]
-
-        if len(in_radius) == 0:
+    t = 0.01
+    data_point = data[:, idx].reshape(3, 1)
+    while True:
+        dists = np.linalg.norm(data - data_point, axis=0)
+        neighbors = data[:, dists < r]
+        new_point = np.mean(neighbors, axis=1).reshape(3, 1)
+        shift = np.linalg.norm(new_point - data_point)
+        if shift < t:
             break
-
-        # 计算这些点的均值（Mean Shift vector）
-        new_point = np.mean(in_radius, axis=0, keepdims=True)
-
-        # 更新 shift 并移动当前点
-        shift = new_point - data_pointT
-        data_pointT = new_point
-
-    return data_pointT.T 
+        data_point = new_point
+    return data_point
 
 
 
 # Mean shift algorithm
 # 可以改写代码，鼓励自己的想法，但请保证输入输出与notebook一致
 def meanshift(data, r):
-    N = data.shape[1]
-    D = data.shape[0]
-    labels = np.zeros(N, dtype=np.int32)
-    peak_cache = np.zeros((D, N))  # 每个点的收敛位置
+    labels = np.zeros(len(data.T))
     peaks = []
     label_no = 1
+    peak = findpeak(data, 0, r)
+    peaks.append(peak.flatten())
+    labels[0] = label_no
 
-    # 第一步：先对所有点运行 findpeak（可以考虑并行/向量化）
-    for idx in range(N):
-        peak_cache[:, idx] = findpeak(data, idx, r).squeeze()
-
-    # 第二步：对收敛点进行聚类
-    for idx in range(N):
-        peak = peak_cache[:, idx].reshape(1, -1)
-        assigned = False
-
-        for i, existing_peak in enumerate(peaks):
-            if np.linalg.norm(peak - existing_peak) < r / 2:
+    for idx in range(1, len(data.T)):
+        current_peak = findpeak(data, idx, r)
+        found = False
+        for i, p in enumerate(peaks):
+            if np.linalg.norm(current_peak.flatten() - p) < r / 2:
                 labels[idx] = i + 1
-                assigned = True
+                found = True
                 break
-
-        if not assigned:
-            peaks.append(peak)
-            labels[idx] = label_no
+        if not found:
+            peaks.append(current_peak.flatten())
             label_no += 1
-
-    peaks = np.array(peaks).squeeze()
-    if peaks.ndim == 1:
-        peaks = peaks[np.newaxis, :]
-    return labels, peaks.T
+            labels[idx] = label_no
+    return labels, np.array(peaks).T
 
 
 
@@ -179,9 +146,5 @@ def compute_accuracy(mask_gt, mask):
 
     assert mask_gt.shape == mask.shape, "Masks must have the same shape"
     
-    correct = (mask_gt == mask).sum()
-    total = mask_gt.size
-    acc = correct / total
-
-    return acc
-
+    accuracy = np.mean(mask_gt == mask)
+    return accuracy
