@@ -126,25 +126,16 @@ def meanshift(data, r):
 
     from sklearn.cluster import MeanShift
 
-    # 计算距离矩阵
-    dists = squareform(pdist(data.T))
-    # 计算均值漂移
+    # sklearn 的 MeanShift 期望输入为 (N, D)，所以需要转置
+    data_T = data.T
+
     ms = MeanShift(bandwidth=r, bin_seeding=True)
-    ms.fit(dists)
-    labels = ms.labels_  # shape: (num_points,)
-    # 获取聚类中心
-    cluster_centers = ms.cluster_centers_  # shape: (num_clusters, D)
-    # 获取每个点的聚类中心
-    peaks = []
-    for i in range(len(cluster_centers)):
-        # 找到每个点的聚类中心
-        peak = findpeak(data, i, r)
-        peaks.append(peak)
-    # 将聚类中心转换为 numpy 数组
-    peaks = np.array(peaks).reshape(-1, data.shape[0])
+    ms.fit(data_T)
 
-    return labels, np.array(peaks).T  # peaks shape: D × num_peaks
+    labels = ms.labels_
+    peaks = ms.cluster_centers_.T  # 转回 (D, num_clusters)
 
+    return labels, peaks
 
 # image segmentation
 def segmIm(img, r):
