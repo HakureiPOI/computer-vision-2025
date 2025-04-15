@@ -98,14 +98,19 @@ def meanshift(data, r):
     N = data.shape[1]
     D = data.shape[0]
     labels = np.zeros(N, dtype=np.int32)
-    peaks = []  # 所有聚类中心
+    peak_cache = np.zeros((D, N))  # 每个点的收敛位置
+    peaks = []
     label_no = 1
 
+    # 第一步：先对所有点运行 findpeak（可以考虑并行/向量化）
     for idx in range(N):
-        peak = findpeak(data, idx, r).T  # shape = (1, D)
+        peak_cache[:, idx] = findpeak(data, idx, r).squeeze()
 
-        # 判断是否接近已有的聚类中心
+    # 第二步：对收敛点进行聚类
+    for idx in range(N):
+        peak = peak_cache[:, idx].reshape(1, -1)
         assigned = False
+
         for i, existing_peak in enumerate(peaks):
             if np.linalg.norm(peak - existing_peak) < r / 2:
                 labels[idx] = i + 1
@@ -117,10 +122,11 @@ def meanshift(data, r):
             labels[idx] = label_no
             label_no += 1
 
-    peaks = np.array(peaks).squeeze()  # shape = (num_clusters, D)
+    peaks = np.array(peaks).squeeze()
     if peaks.ndim == 1:
         peaks = peaks[np.newaxis, :]
-    return labels, peaks.T  # 转置为 (D, num_clusters)
+    return labels, peaks.T
+
 
 
 # image segmentation
