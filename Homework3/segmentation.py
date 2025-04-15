@@ -72,26 +72,46 @@ def findpeak(data, idx, r):
 
 # Mean shift algorithm
 # 可以改写代码，鼓励自己的想法，但请保证输入输出与notebook一致
-def meanshift(data, r):
-    labels = np.zeros(len(data.T))
+def meanshift(data, r, cache_dir="./meanshift_cache"):
+    import pickle
+    import os
+    
+    os.makedirs(cache_dir, exist_ok=True)
+    num_points = data.shape[1]
+    labels = np.zeros(num_points)
     peaks = []
+    peak_list = []
+
+    # 预计算所有点的 peak，缓存本地，避免重复计算
+    for idx in range(num_points):
+        cache_file = os.path.join(cache_dir, f"peak_{idx}.pkl")
+        if os.path.exists(cache_file):
+            with open(cache_file, 'rb') as f:
+                peak = pickle.load(f)
+        else:
+            peak = findpeak(data, idx, r)
+            with open(cache_file, 'wb') as f:
+                pickle.dump(peak, f)
+        peak_list.append(peak.flatten())
+
+    # 聚类标号逻辑
     label_no = 1
-    peak = findpeak(data, 0, r)
-    peaks.append(peak.flatten())
+    peaks.append(peak_list[0])
     labels[0] = label_no
 
-    for idx in range(1, len(data.T)):
-        current_peak = findpeak(data, idx, r)
+    for idx in range(1, num_points):
+        current_peak = peak_list[idx]
         found = False
         for i, p in enumerate(peaks):
-            if np.linalg.norm(current_peak.flatten() - p) < r / 2:
+            if np.linalg.norm(current_peak - p) < r / 2:
                 labels[idx] = i + 1
                 found = True
                 break
         if not found:
-            peaks.append(current_peak.flatten())
+            peaks.append(current_peak)
             label_no += 1
             labels[idx] = label_no
+
     return labels, np.array(peaks).T
 
 
