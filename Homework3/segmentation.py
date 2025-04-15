@@ -95,7 +95,6 @@ def findpeak(data, idx, r):
 # Mean shift algorithm
 # 可以改写代码，鼓励自己的想法，但请保证输入输出与notebook一致
 def meanshift(data, r):
-def meanshift(data, r):
     labels = np.zeros(len(data.T), dtype=np.int32)
     peaks = []  # 已识别的聚类中心（peaks）
     label_no = 1  # 当前聚类编号
