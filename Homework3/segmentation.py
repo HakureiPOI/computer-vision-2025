@@ -26,94 +26,110 @@ def kmeans(features, k, num_iters=500):
         assignments - Array representing cluster assignment of each point.
             (e.g. i-th point is assigned to cluster assignments[i])
     """
-
+    print(features.shape)
     N, D = features.shape
+
     assert N >= k, 'Number of clusters cannot be greater than number of points'
-    
+
+    # 初始化中心
     idxs = np.random.choice(N, size=k, replace=False)
     centers = features[idxs]
     assignments = np.zeros(N, dtype=np.uint32)
 
-    for _ in range(num_iters):
-        dists = cdist(features, centers)
-        new_assignments = np.argmin(dists, axis=1)
+    for n in range(num_iters):
+        # 计算距离并更新分配
+        distances = cdist(features, centers)
+        new_assignments = np.argmin(distances, axis=1)
+
         if np.all(assignments == new_assignments):
             break
+
         assignments = new_assignments
+
+        # 更新中心
         for i in range(k):
-            if np.any(assignments == i):
-                centers[i] = features[assignments == i].mean(axis=0)
+            cluster_points = features[assignments == i]
+            if len(cluster_points) > 0:
+                centers[i] = np.mean(cluster_points, axis=0)
 
     return assignments
 
+
 ### Clustering Methods for colorful image
-def kmeans_color(img, k, num_iters=500):
-    H, W, C = img.shape
-    features = img.reshape(-1, C).astype(np.float32)
-    assignments = kmeans(features, k, num_iters)
-    return assignments.reshape(H, W)
+def kmeans_color(features, k, num_iters=500):
+    N = features.shape[0]
+    assignments = np.zeros(N, dtype=np.uint32)
+
+    # 初始化中心
+    idxs = np.random.choice(N, size=k, replace=False)
+    centers = features[idxs]
+
+    for n in range(num_iters):
+        distances = cdist(features, centers)
+        new_assignments = np.argmin(distances, axis=1)
+
+        if np.all(assignments == new_assignments):
+            break
+
+        assignments = new_assignments
+
+        for i in range(k):
+            cluster_points = features[assignments == i]
+            if len(cluster_points) > 0:
+                centers[i] = np.mean(cluster_points, axis=0)
+
+    return assignments
 
 
-# 找每个点最后会收敛到的地方（peak）
+
+#找每个点最后会收敛到的地方（peak）
 def findpeak(data, idx, r):
     t = 0.01
-    data_point = data[:, idx].reshape(3, 1)
-    while True:
+    shift = np.array([1])
+    data_point = data[:, idx].reshape(-1, 1)
+
+    while shift.all() > t:
         dists = np.linalg.norm(data - data_point, axis=0)
         neighbors = data[:, dists < r]
-        new_point = np.mean(neighbors, axis=1).reshape(3, 1)
-        shift = np.linalg.norm(new_point - data_point)
-        if shift < t:
-            break
-        data_point = new_point
-    return data_point
 
+        if neighbors.shape[1] == 0:
+            break
+
+        new_point = np.mean(neighbors, axis=1).reshape(-1, 1)
+        shift = np.abs(new_point - data_point)
+        data_point = new_point
+
+    return data_point
 
 
 # Mean shift algorithm
 # 可以改写代码，鼓励自己的想法，但请保证输入输出与notebook一致
-def meanshift(data, r, cache_dir="./meanshift_cache"):
-    import pickle
-    import os
-    
-    os.makedirs(cache_dir, exist_ok=True)
-    num_points = data.shape[1]
-    labels = np.zeros(num_points)
+def meanshift(data, r):
+    labels = np.zeros(len(data.T))
     peaks = []
-    peak_list = []
-
-    # 预计算所有点的 peak，缓存本地，避免重复计算
-    for idx in range(num_points):
-        cache_file = os.path.join(cache_dir, f"peak_{idx}.pkl")
-        if os.path.exists(cache_file):
-            with open(cache_file, 'rb') as f:
-                peak = pickle.load(f)
-        else:
-            peak = findpeak(data, idx, r)
-            with open(cache_file, 'wb') as f:
-                pickle.dump(peak, f)
-        peak_list.append(peak.flatten())
-
-    # 聚类标号逻辑
     label_no = 1
-    peaks.append(peak_list[0])
+
+    peak = findpeak(data, 0, r)
+    peaks.append(peak.T)
     labels[0] = label_no
 
-    for idx in range(1, num_points):
-        current_peak = peak_list[idx]
+    for idx in range(1, len(data.T)):
+        peak = findpeak(data, idx, r)
+        peakT = peak.T
+
         found = False
         for i, p in enumerate(peaks):
-            if np.linalg.norm(current_peak - p) < r / 2:
+            if np.linalg.norm(peakT - p) < r / 2:
                 labels[idx] = i + 1
                 found = True
                 break
+
         if not found:
-            peaks.append(current_peak)
             label_no += 1
             labels[idx] = label_no
+            peaks.append(peakT)
 
     return labels, np.array(peaks).T
-
 
 
 # image segmentation
@@ -163,8 +179,6 @@ def compute_accuracy(mask_gt, mask):
         accuracy - The fraction of pixels where mask_gt and mask agree. A
             bigger number is better, where 1.0 indicates a perfect segmentation.
     """
-
-    assert mask_gt.shape == mask.shape, "Masks must have the same shape"
-    
-    accuracy = np.mean(mask_gt == mask)
+    accuracy = np.sum(mask_gt == mask) / mask_gt.size
     return accuracy
+
