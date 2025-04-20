@@ -57,28 +57,9 @@ def kmeans(features, k, num_iters=500):
 
 ### Clustering Methods for colorful image
 def kmeans_color(features, k, num_iters=500):
-    N = features.shape[0]
-    assignments = np.zeros(N, dtype=np.uint32)
-
-    # 初始化中心
-    idxs = np.random.choice(N, size=k, replace=False)
-    centers = features[idxs]
-
-    for n in range(num_iters):
-        distances = cdist(features, centers)
-        new_assignments = np.argmin(distances, axis=1)
-
-        if np.all(assignments == new_assignments):
-            break
-
-        assignments = new_assignments
-
-        for i in range(k):
-            cluster_points = features[assignments == i]
-            if len(cluster_points) > 0:
-                centers[i] = np.mean(cluster_points, axis=0)
-
-    return assignments
+    if features.ndim == 3:
+        features = features.reshape(-1, 3)
+    return kmeans(features, k, num_iters)
 
 
 
