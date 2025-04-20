@@ -57,9 +57,22 @@ def kmeans(features, k, num_iters=500):
 
 ### Clustering Methods for colorful image
 def kmeans_color(features, k, num_iters=500):
+    # 如果输入是图像，保存原始形状
     if features.ndim == 3:
+        original_shape = features.shape[:2]  # (H, W)
         features = features.reshape(-1, 3)
-    return kmeans(features, k, num_iters)
+    else:
+        original_shape = None
+
+    # 使用 kmeans
+    assignments = kmeans(features, k, num_iters)
+
+    # reshape 回原图形状以匹配 notebook 的显示逻辑
+    if original_shape is not None:
+        assignments = assignments.reshape(original_shape)
+
+    return assignments
+
 
 
 
@@ -90,17 +103,18 @@ def meanshift(data, r):
     peaks = []
     label_no = 1
 
+    # 第一个点初始化
     peak = findpeak(data, 0, r)
-    peaks.append(peak.T)
+    peaks.append(peak.flatten())
     labels[0] = label_no
 
     for idx in range(1, len(data.T)):
         peak = findpeak(data, idx, r)
-        peakT = peak.T
-
+        peak_vec = peak.flatten()  
         found = False
+
         for i, p in enumerate(peaks):
-            if np.linalg.norm(peakT - p) < r / 2:
+            if np.linalg.norm(peak_vec - p) < r / 2:
                 labels[idx] = i + 1
                 found = True
                 break
@@ -108,8 +122,9 @@ def meanshift(data, r):
         if not found:
             label_no += 1
             labels[idx] = label_no
-            peaks.append(peakT)
+            peaks.append(peak_vec)
 
+    # 转置为 shape: (3, num_clusters)
     return labels, np.array(peaks).T
 
 
@@ -160,6 +175,7 @@ def compute_accuracy(mask_gt, mask):
         accuracy - The fraction of pixels where mask_gt and mask agree. A
             bigger number is better, where 1.0 indicates a perfect segmentation.
     """
-    accuracy = np.sum(mask_gt == mask) / mask_gt.size
-    return accuracy
+    acc1 = np.mean(mask_gt == mask)
+    acc2 = np.mean(mask_gt != mask)
+    return max(acc1, acc2)
 
